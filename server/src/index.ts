@@ -1,39 +1,56 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import { registerUser, loginUser } from './auth';
+import protectedRoutes from './routes/protected'; // Импортируем защищенные маршруты
 
 const app = express();
+
+// Middleware для обработки JSON
 app.use(express.json());
+
+app.use('/api', protectedRoutes);
 
 // Настройка CORS
 app.use(
     cors({
-        origin: 'http://localhost:3000', // Разрешаем запросы только с этого домена
-        methods: ['GET', 'POST', 'PUT', 'DELETE'], // Разрешенные методы HTTP
-        allowedHeaders: ['Content-Type', 'Authorization'], // Разрешенные заголовки
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', '*']
     })
 );
 
-// Регистрация
-app.post('/register', async (req: Request, res: Response) => {
+// Маршрут для регистрации
+app.post('/register', async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        console.log('Received data:', req.body); // Логируем полученные данные
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email и пароль обязательны' });
+        }
+
         const userId = await registerUser(email, password);
         res.status(201).json({ message: 'Пользователь зарегистрирован', userId });
-    } catch (error) {
-        // @ts-ignore
+    } catch (error: any) {
+        console.error('Ошибка в /register:', error.message);
         res.status(400).json({ error: error.message });
     }
 });
 
-// Авторизация
-app.post('/login', async (req: Request, res: Response) => {
+// Маршрут для авторизации
+app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email и пароль обязательны' });
+        }
+
         const token = await loginUser(email, password);
         res.status(200).json({ token });
-    } catch (error) {
-        // @ts-ignore
+    } catch (error: any) {
+        console.error('Ошибка в /login:', error.message);
         res.status(400).json({ error: error.message });
     }
 });

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import axios from 'axios';
+import Cookies from 'js-cookie';
+import { useState } from 'react';
 
 interface AuthFormProps {
     mode: 'login' | 'register';
@@ -12,15 +13,15 @@ const AuthForm = ({ mode }: AuthFormProps) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!email || !password) {
-            setMessage('Пожалуйста, заполните все поля');
-            return;
-        }
-
         try {
             const response = await axios.post(`http://localhost:5000/${mode}`, { email, password });
-            setMessage(response.data.message || 'Успешно!');
+            const token = response.data.token;
+
+            // Сохраняем токен в cookies
+            Cookies.set('token', token, { expires: 1 }); // Токен будет храниться 1 день
+
+            // Перенаправляем на страницу личного кабинета
+            window.location.href = '/dashboard';
         } catch (error: any) {
             setMessage(error.response?.data?.error || 'Произошла ошибка');
         }
